@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Climb — демо-игра</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --bg: #090c10;
+    --panel: #12171e;
+    --panel-2: #171d25;
+    --line: #232b34;
+    --text: #e7ecf2;
+    --muted: #6f7c8c;
+    --amber: #ff8a1e;
+    --amber-dim: #6b4a22;
+    --green: #34d399;
+    --red: #ff4d5e;
+    --radius: 10px;
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{ height: 100%; }
+  body{
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 20px 14px 40px;
+  }
+
+  .app{ width: 100%; max-width: 460px; }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 4px 16px;
+  }
+  .brand{
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .brand-mark{
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: -0.02em;
+  }
+  .brand-mark span{ color: var(--amber); }
+  .brand-sub{
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .balance{
+    text-align: right;
+  }
+  .balance-label{
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .balance-value{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  /* ---------- History strip ---------- */
+  .history{
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 2px 2px 16px;
+    scrollbar-width: none;
+  }
+  .history::-webkit-scrollbar{ display: none; }
+  .history-chip{
+    flex: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 9px;
+    border-radius: 20px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--muted);
+  }
+  .history-chip.win{ color: var(--green); border-color: rgba(52,211,153,0.25); }
+  .history-chip.loss{ color: var(--red); border-color: rgba(255,77,94,0.2); }
+
+  /* ---------- Radar / display panel ---------- */
+  .display{
+    position: relative;
+    background:
+      radial-gradient(ellipse at 50% 100%, rgba(255,138,30,0.07), transparent 60%),
+      var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    height: 300px;
+    overflow: hidden;
+  }
+  .display canvas{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .display-readout{
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .multiplier{
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 52px;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    text-shadow: 0 0 30px rgba(255,138,30,0.25);
+    transition: color 0.15s;
+  }
+  .multiplier.flying{ color: var(--amber); }
+  .multiplier.crashed{ color: var(--red); }
+  .status-line{
+    margin-top: 4px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+  }
+  .status-line.crashed{ color: var(--red); }
+
+  .payout-line{
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--green);
+    background: rgba(52,211,153,0.1);
+    border: 1px solid rgba(52,211,153,0.25);
+    padding: 5px 14px;
+    border-radius: 20px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  .payout-line.show{ opacity: 1; transform: translateY(0); }
+
+  .countdown-ring{
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+  }
+  .countdown-num{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    color: var(--muted);
+    background: rgba(9,12,16,0.7);
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+  }
+
+  /* ---------- Controls ---------- */
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-top: 14px;
+  }
+
+  .mode-toggle{
+    display: flex;
+    background: var(--panel-2);
+    border-radius: 8px;
+    padding: 3px;
+    margin-bottom: 14px;
+  }
+  .mode-toggle button{
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 0;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .mode-toggle button.active{
+    background: var(--panel);
+    color: var(--text);
+  }
+
+  .field-label{
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  .stepper{
+    display: flex;
+    align-items: center;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .stepper input{
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    padding: 12px 0;
+    width: 100%;
+    outline: none;
+  }
+  .stepper button{
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    width: 42px;
+    height: 100%;
+    cursor: pointer;
+  }
+  .stepper button:hover{ color: var(--text); }
+
+  .quick-amounts{
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .quick-amounts button{
+    flex: 1;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 7px 0;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .quick-amounts button:hover{ color: var(--text); border-color: var(--amber-dim); }
+
+  .auto-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+  }
+  .auto-row .field-label{ margin-bottom: 0; }
+  .switch{
+    position: relative;
+    width: 38px;
+    height: 22px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  .switch::after{
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: transform 0.15s, background 0.15s;
+  }
+  .switch.on{ border-color: var(--amber-dim); }
+  .switch.on::after{ transform: translateX(16px); background: var(--amber); }
+
+  .auto-input{
+    margin-top: 8px;
+    display: none;
+  }
+  .auto-input.show{ display: block; }
+  .auto-input input{
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    padding: 9px 10px;
+    outline: none;
+  }
+
+  .bet-btn{
+    width: 100%;
+    margin-top: 16px;
+    padding: 16px 0;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    background: var(--amber);
+    color: #1a1103;
+    transition: transform 0.06s, background 0.15s, opacity 0.15s;
+  }
+  .bet-btn:active{ transform: scale(0.99); }
+  .bet-btn.cashout{
+    background: var(--green);
+    color: #04231a;
+  }
+  .bet-btn:disabled{
+    background: var(--panel-2);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+  .bet-btn .sub{
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    font-size: 12px;
+    opacity: 0.75;
+    margin-top: 2px;
+  }
+
+  .note{
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+  .note b{ color: #9aa6b3; }
+
+  @media (max-width: 380px){
+    .multiplier{ font-size: 42px; }
+    .display{ height: 260px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div>
+        <div class="brand-mark">CLIM<span>B</span></div>
+        <div class="brand-sub">FUN&nbsp;MODE · демо</div>
+      </div>
+    </div>
+    <div class="balance">
+      <div class="balance-label">Баланс</div>
+      <div class="balance-value" id="balance">1 000.00 ₽</div>
+    </div>
+  </div>
+
+  <div class="history" id="history"></div>
+
+  <div class="display">
+    <canvas id="canvas"></canvas>
+    <div class="display-readout">
+      <div class="multiplier" id="multiplier">1.00x</div>
+      <div class="status-line" id="statusLine">ожидание раунда</div>
+      <div class="payout-line" id="payoutLine"></div>
+    </div>
+    <div class="countdown-ring" id="countdownWrap" style="display:none;">
+      <div class="countdown-num" id="countdownNum">старт через 5.0с</div>
+    </div>
+  </div>
+
+  <div class="panel">
+
+    <div class="mode-toggle">
+      <button class="active" id="tabManual">Ставка</button>
+      <button id="tabAuto">Авто</button>
+    </div>
+
+    <div class="field-label">Сумма ставки</div>
+    <div class="stepper">
+      <button id="betMinus">−</button>
+      <input type="text" id="betAmount" value="10.00" inputmode="decimal">
+      <button id="betPlus">+</button>
+    </div>
+    <div class="quick-amounts">
+      <button data-amt="1">1 ₽</button>
+      <button data-amt="2">2 ₽</button>
+      <button data-amt="5">5 ₽</button>
+      <button data-amt="10">10 ₽</button>
+      <button data-mult="2">x2</button>
+      <button data-mult="0.5">½</button>
+    </div>
+
+    <div class="auto-row">
+      <div class="field-label" style="margin:0;">Авто-кэшаут</div>
+      <div class="switch" id="autoSwitch"></div>
+    </div>
+    <div class="auto-input" id="autoInputWrap">
+      <input type="text" id="autoMultiplier" value="2.00" inputmode="decimal" placeholder="Множитель, напр. 2.00">
+    </div>
+
+    <button class="bet-btn" id="betBtn">
+      ПОСТАВИТЬ
+      <span class="sub" id="betBtnSub">на следующий раунд</span>
+    </button>
+
+  </div>
+
+  <div class="note">Игра на <b>виртуальные</b> очки, без реальных денег и без привязки платежей. Баланс сбрасывается при перезагрузке страницы.</div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------------- state ----------------
+  let balance = 1000.00;
+  let betAmount = 10.00;
+  let autoCashoutOn = false;
+  let autoCashoutMult = 2.00;
+
+  let roundState = "waiting"; // waiting | flying | crashed
+  let currentMultiplier = 1.00;
+  let crashPoint = 1.00;
+  let roundStartTime = 0;
+  let countdownEnd = 0;
+
+  let activeBet = null; // {amount, cashedOutAt: null|number}
+  let history = []; // list of {value, win}
+
+  const el = {
+    balance: document.getElementById('balance'),
+    multiplier: document.getElementById('multiplier'),
+    statusLine: document.getElementById('statusLine'),
+    payoutLine: document.getElementById('payoutLine'),
+    countdownWrap: document.getElementById('countdownWrap'),
+    countdownNum: document.getElementById('countdownNum'),
+    history: document.getElementById('history'),
+    betAmount: document.getElementById('betAmount'),
+    betBtn: document.getElementById('betBtn'),
+    betBtnSub: document.getElementById('betBtnSub'),
+    autoSwitch: document.getElementById('autoSwitch'),
+    autoInputWrap: document.getElementById('autoInputWrap'),
+    autoMultiplier: document.getElementById('autoMultiplier'),
+  };
+
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvas(){
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width * devicePixelRatio;
+    canvas.height = rect.height * devicePixelRatio;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // ---------------- helpers ----------------
+  function fmtMoney(v){
+    return v.toLocaleString('ru-RU', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ₽';
+  }
+  function fmtMult(v){
+    return v.toFixed(2) + 'x';
+  }
+  function updateBalanceUI(){
+    el.balance.textContent = fmtMoney(balance);
+  }
+
+  // simple house-edge crash-point generator (demo only, not cryptographically fair)
+  function generateCrashPoint(){
+    const houseEdge = 0.04;
+    const r = Math.random();
+    if (r < houseEdge) return 1.00;
+    const raw = (1 - houseEdge) / (1 - r);
+    return Math.min(Math.max(raw, 1.00), 500);
+  }
+
+  function pushHistory(value, win){
+    history.unshift({value, win});
+    if (history.length > 14) history.pop();
+    renderHistory();
+  }
+  function renderHistory(){
+    el.history.innerHTML = history.map(h =>
+      `<div class="history-chip ${h.win ? 'win' : 'loss'}">${fmtMult(h.value)}</div>`
+    ).join('');
+  }
+
+  // ---------------- drawing ----------------
+  function drawScene(progress /* 0..1 during flight, or null */){
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0,0,w,h);
+
+    // background grid rings (radar feel)
+    ctx.strokeStyle = 'rgba(255,255,255,0.035)';
+    ctx.lineWidth = 1 * devicePixelRatio;
+    for(let i=1;i<=4;i++){
+      const r = (Math.min(w,h)/2) * (i/4) * 1.3;
+      ctx.beginPath();
+      ctx.arc(w*0.5, h*1.05, r, Math.PI, 2*Math.PI);
+      ctx.stroke();
+    }
+
+    if (roundState === 'waiting') return;
+
+    // path of the curve, based on elapsed time -> multiplier growth
+    const padL = w*0.08, padB = h*0.12, padT = h*0.12, padR = w*0.06;
+    const plotW = w - padL - padR;
+    const plotH = h - padT - padB;
+
+    const t = Math.min(currentMultiplier, roundState==='crashed' ? crashPoint : currentMultiplier);
+    const maxDomain = Math.max(2.2, t * 1.15);
+
+    const points = [];
+    const steps = 60;
+    for(let i=0;i<=steps;i++){
+      const frac = i/steps;
+      const mVal = 1 + frac*(maxDomain-1);
+      // exponential-ish ease so early growth is gentle then steep
+      const xNorm = frac;
+      const yNorm = Math.pow(frac, 1.6);
+      if (mVal > t + 0.0001) break;
+      points.push([padL + xNorm*plotW, padT + plotH - yNorm*plotH]);
+    }
+    if (points.length < 2) return;
+
+    // filled area under curve
+    ctx.beginPath();
+    ctx.moveTo(points[0][0], padT+plotH);
+    points.forEach(p => ctx.lineTo(p[0], p[1]));
+    ctx.lineTo(points[points.length-1][0], padT+plotH);
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, padT, 0, padT+plotH);
+    if (roundState === 'crashed'){
+      grad.addColorStop(0, 'rgba(255,77,94,0.35)');
+      grad.addColorStop(1, 'rgba(255,77,94,0.02)');
+    } else {
+      grad.addColorStop(0, 'rgba(255,138,30,0.32)');
+      grad.addColorStop(1, 'rgba(255,138,30,0.02)');
+    }
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // stroke line
+    ctx.beginPath();
+    points.forEach((p,i) => i===0 ? ctx.moveTo(p[0],p[1]) : ctx.lineTo(p[0],p[1]));
+    ctx.strokeStyle = roundState === 'crashed' ? '#ff4d5e' : '#ff8a1e';
+    ctx.lineWidth = 3 * devicePixelRatio;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // marker dot at tip
+    const tip = points[points.length-1];
+    ctx.beginPath();
+    ctx.arc(tip[0], tip[1], 5*devicePixelRatio, 0, Math.PI*2);
+    ctx.fillStyle = roundState === 'crashed' ? '#ff4d5e' : '#ffffff';
+    ctx.fill();
+  }
+
+  // ---------------- round lifecycle ----------------
+  let rafId = null;
+  let countdownTimer = null;
+
+  function startCountdown(seconds){
+    roundState = 'waiting';
+    activeBet = null;
+    currentMultiplier = 1.00;
+    el.multiplier.textContent = '1.00x';
+    el.multiplier.className = 'multiplier';
+    el.statusLine.textContent = 'ожидание раунда';
+    el.statusLine.className = 'status-line';
+    el.countdownWrap.style.display = 'flex';
+    el.payoutLine.classList.remove('show');
+    resetBetButton();
+
+    let remaining = seconds;
+    updateCountdownLabel(remaining);
+    drawScene();
+
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      remaining -= 0.1;
+      if (remaining <= 0){
+        clearInterval(countdownTimer);
+        el.countdownWrap.style.display = 'none';
+        startFlight();
+        return;
+      }
+      updateCountdownLabel(remaining);
+    }, 100);
+  }
+
+  function updateCountdownLabel(remaining){
+    el.countdownNum.textContent = 'старт через ' + Math.max(0,remaining).toFixed(1) + 'с';
+  }
+
+  function startFlight(){
+    roundState = 'flying';
+    crashPoint = generateCrashPoint();
+    roundStartTime = performance.now();
+    el.statusLine.textContent = 'полёт';
+    el.multiplier.className = 'multiplier flying';
+
+    if (pendingBet){
+      activeBet = { amount: pendingBet, cashedOutAt: null };
+      pendingBet = null;
+    }
+    updateBetButtonDuringFlight();
+
+    function tick(now){
+      const elapsed = (now - roundStartTime) / 1000;
+      // exponential growth: starts slow, rate of increase itself accelerates over time
+      const growthRate = 0.099; // tweak this to make the whole round faster/slower
+      currentMultiplier = Math.exp(growthRate * elapsed);
+
+      if (activeBet && !activeBet.cashedOutAt && autoCashoutOn && currentMultiplier >= autoCashoutMult){
+        doCashout(autoCashoutMult);
+      }
+
+      if (currentMultiplier >= crashPoint){
+        currentMultiplier = crashPoint;
+        finishRound();
+        return;
+      }
+
+      el.multiplier.textContent = fmtMult(currentMultiplier);
+      if (activeBet && !activeBet.cashedOutAt){
+        const potential = activeBet.amount * currentMultiplier;
+        el.payoutLine.textContent = 'заберёте: ' + fmtMoney(potential);
+        el.payoutLine.classList.add('show');
+        el.betBtnSub.textContent = 'текущий выигрыш: ' + fmtMoney(potential);
+      }
+      drawScene();
+      rafId = requestAnimationFrame(tick);
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function finishRound(){
+    roundState = 'crashed';
+    cancelAnimationFrame(rafId);
+    el.multiplier.textContent = fmtMult(crashPoint);
+    el.multiplier.className = 'multiplier crashed';
+    el.statusLine.textContent = 'краш';
+    el.statusLine.className = 'status-line crashed';
+    drawScene();
+
+    const won = !!(activeBet && activeBet.cashedOutAt);
+    pushHistory(crashPoint, won);
+
+    if (activeBet && !activeBet.cashedOutAt){
+      // bet lost — hide the payout badge
+      el.payoutLine.classList.remove('show');
+    }
+    resetBetButton();
+
+    setTimeout(() => startCountdown(5), 1500);
+  }
+
+  function doCashout(atMultiplier){
+    if (!activeBet || activeBet.cashedOutAt) return;
+    activeBet.cashedOutAt = atMultiplier;
+    const payout = activeBet.amount * atMultiplier;
+    balance += payout;
+    updateBalanceUI();
+    el.betBtn.textContent = 'ЗАБРАНО ' + fmtMult(atMultiplier);
+    el.betBtn.classList.remove('cashout');
+    el.betBtn.disabled = true;
+    el.betBtnSub.textContent = '+ ' + fmtMoney(payout);
+    el.betBtnSub.style.display = 'block';
+    el.payoutLine.textContent = 'забрано: ' + fmtMoney(payout);
+  }
+
+  // ---------------- bet button logic ----------------
+  let pendingBet = null; // amount queued for next round
+
+  function resetBetButton(){
+    el.betBtn.disabled = false;
+    el.betBtn.classList.remove('cashout');
+    if (roundState === 'waiting'){
+      el.betBtn.textContent = pendingBet ? 'СТАВКА ПРИНЯТА' : 'ПОСТАВИТЬ';
+      el.betBtnSub.style.display = 'block';
+      el.betBtnSub.textContent = pendingBet ? 'ожидаем старт' : 'на следующий раунд';
+      el.betBtn.disabled = !!pendingBet;
+    } else {
+      el.betBtn.textContent = 'ПОСТАВИТЬ';
+      el.betBtnSub.textContent = 'дождитесь конца раунда';
+      el.betBtn.disabled = true;
+    }
+  }
+
+  function updateBetButtonDuringFlight(){
+    if (activeBet){
+      el.betBtn.disabled = false;
+      el.betBtn.classList.add('cashout');
+      el.betBtn.textContent = 'ЗАБРАТЬ';
+      el.betBtnSub.style.display = 'block';
+      el.betBtnSub.textContent = 'текущий выигрыш: ' + fmtMoney(activeBet.amount * currentMultiplier);
+    } else {
+      el.betBtn.disabled = true;
+      el.betBtn.textContent = 'ИДЁТ РАУНД';
+      el.betBtnSub.style.display = 'block';
+      el.betBtnSub.textContent = 'ставка недоступна';
+      el.payoutLine.classList.remove('show');
+    }
+  }
+
+  el.betBtn.addEventListener('click', () => {
+    if (roundState === 'waiting'){
+      if (pendingBet) return; // already queued
+      const amt = parseFloat(el.betAmount.value.replace(',', '.'));
+      if (!amt || amt <= 0){ flashInvalid(el.betAmount); return; }
+      if (amt > balance){ flashInvalid(el.betAmount); return; }
+      balance -= amt;
+      updateBalanceUI();
+      pendingBet = amt;
+      resetBetButton();
+    } else if (roundState === 'flying' && activeBet && !activeBet.cashedOutAt){
+      doCashout(currentMultiplier);
+    }
+  });
+
+  function flashInvalid(node){
+    node.style.borderColor = 'var(--red)';
+    setTimeout(() => node.style.borderColor = '', 400);
+  }
+
+  // ---------------- bet amount controls ----------------
+  function setBetAmount(v){
+    v = Math.max(1, Math.round(v*100)/100);
+    el.betAmount.value = v.toFixed(2);
+  }
+  document.getElementById('betMinus').addEventListener('click', () => {
+    setBetAmount(parseFloat(el.betAmount.value) - 1);
+  });
+  document.getElementById('betPlus').addEventListener('click', () => {
+    setBetAmount(parseFloat(el.betAmount.value) + 1);
+  });
+  document.querySelectorAll('.quick-amounts button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.amt) setBetAmount(parseFloat(btn.dataset.amt));
+      if (btn.dataset.mult) setBetAmount(parseFloat(el.betAmount.value) * parseFloat(btn.dataset.mult));
+    });
+  });
+  el.betAmount.addEventListener('change', () => {
+    const v = parseFloat(el.betAmount.value.replace(',', '.'));
+    setBetAmount(isNaN(v) ? 10 : v);
+  });
+
+  // ---------------- auto-cashout controls ----------------
+  el.autoSwitch.addEventListener('click', () => {
+    autoCashoutOn = !autoCashoutOn;
+    el.autoSwitch.classList.toggle('on', autoCashoutOn);
+    el.autoInputWrap.classList.toggle('show', autoCashoutOn);
+  });
+  el.autoMultiplier.addEventListener('change', () => {
+    const v = parseFloat(el.autoMultiplier.value.replace(',', '.'));
+    autoCashoutMult = (!isNaN(v) && v > 1) ? v : 2.00;
+    el.autoMultiplier.value = autoCashoutMult.toFixed(2);
+  });
+
+  document.getElementById('tabManual').addEventListener('click', function(){
+    this.classList.add('active');
+    document.getElementById('tabAuto').classList.remove('active');
+  });
+  document.getElementById('tabAuto').addEventListener('click', function(){
+    this.classList.add('active');
+    document.getElementById('tabManual').classList.remove('active');
+  });
+
+  // ---------------- init ----------------
+  updateBalanceUI();
+  // seed a little history so the strip isn't empty
+  [1.23, 4.81, 1.02, 2.55, 1.94].forEach(v => pushHistory(v, false));
+  startCountdown(5);
+
+})();
+</script>
+
+</body>
+</html>
