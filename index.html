@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Climb — демо-игра</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#090c10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Climb">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
@@ -25,12 +33,23 @@
   html, body{ height: 100%; }
   body{
     margin: 0;
-    background: var(--bg);
+    background:
+      radial-gradient(circle at 20% 15%, rgba(255,138,30,0.10), transparent 45%),
+      radial-gradient(circle at 85% 75%, rgba(52,211,153,0.08), transparent 40%),
+      radial-gradient(circle at 50% 100%, rgba(255,77,94,0.06), transparent 50%),
+      var(--bg);
+    background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+    animation: bgDrift 22s ease-in-out infinite;
     color: var(--text);
     font-family: 'Space Grotesk', sans-serif;
     display: flex;
     justify-content: center;
     padding: 20px 14px 40px;
+  }
+  @keyframes bgDrift{
+    0%{ background-position: 0% 0%, 100% 100%, 50% 100%, 0 0; }
+    50%{ background-position: 100% 50%, 0% 50%, 60% 90%, 0 0; }
+    100%{ background-position: 0% 0%, 100% 100%, 50% 100%, 0 0; }
   }
 
   .app{ width: 100%; max-width: 460px; }
@@ -74,7 +93,95 @@
     color: var(--text);
   }
 
+  .topbar-right{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .clicker{
+    position: relative;
+    width: 46px;
+    height: 46px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.08s, border-color 0.15s, background 0.15s;
+    overflow: visible;
+  }
+  .clicker:hover{ border-color: var(--amber-dim); }
+  .clicker:active{ transform: scale(0.92); background: var(--panel-2); }
+  .clicker-icon{
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--amber);
+    line-height: 1;
+  }
+  .clicker-label{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: var(--muted);
+    margin-top: 2px;
+    letter-spacing: 0.02em;
+  }
+  .click-pop{
+    position: absolute;
+    left: 50%;
+    top: -4px;
+    transform: translate(-50%, 0);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--green);
+    pointer-events: none;
+    animation: popUp 0.6s ease-out forwards;
+  }
+  @keyframes popUp{
+    0%{ opacity: 1; transform: translate(-50%, 0); }
+    100%{ opacity: 0; transform: translate(-50%, -22px); }
+  }
+
   /* ---------- History strip ---------- */
+  /* ---------- Quick actions bar ---------- */
+  .quick-actions{
+    display: flex;
+    gap: 8px;
+    padding: 0 2px 14px;
+  }
+  .quick-action-btn{
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 4px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text);
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.08s, border-color 0.15s, background 0.15s;
+  }
+  .quick-action-btn:hover{ border-color: var(--amber-dim); }
+  .quick-action-btn:active{ transform: scale(0.96); background: var(--panel-2); }
+  .qa-icon{ font-size: 15px; line-height: 1; }
+  .qa-label{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
   .history{
     display: flex;
     gap: 6px;
@@ -107,6 +214,37 @@
     border-radius: var(--radius);
     height: 300px;
     overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .display.launch-flash{ animation: launchFlash 0.5s ease-out; }
+  .display.crash-shake{ animation: crashShake 0.4s ease-in-out; border-color: rgba(255,77,94,0.5); }
+  @keyframes launchFlash{
+    0%{ box-shadow: inset 0 0 0 2px rgba(255,138,30,0); background-color: rgba(255,138,30,0.35); }
+    100%{ box-shadow: inset 0 0 0 2px rgba(255,138,30,0); background-color: transparent; }
+  }
+  @keyframes crashShake{
+    0%{ transform: translate(0,0); background-color: rgba(255,77,94,0.28); }
+    20%{ transform: translate(-6px,3px); }
+    40%{ transform: translate(6px,-3px); }
+    60%{ transform: translate(-4px,2px); }
+    80%{ transform: translate(4px,-2px); }
+    100%{ transform: translate(0,0); background-color: transparent; }
+  }
+  .shockwave{
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: transparent;
+    border: 2px solid rgba(255,77,94,0.9);
+    transform: translate(-50%,-50%);
+    pointer-events: none;
+    z-index: 4;
+    animation: shockOut 0.6s ease-out forwards;
+  }
+  @keyframes shockOut{
+    0%{ width: 10px; height: 10px; opacity: 1; }
+    100%{ width: 500px; height: 500px; opacity: 0; }
   }
   .display canvas{
     position: absolute;
@@ -362,6 +500,353 @@
     .multiplier{ font-size: 42px; }
     .display{ height: 260px; }
   }
+
+  /* ---------- Clicker modal ---------- */
+  .modal-overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(4,6,9,0.72);
+    backdrop-filter: blur(3px);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 50;
+  }
+  .modal-overlay.open{ display: flex; }
+  .modal-panel{
+    width: 100%;
+    max-width: 460px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-bottom: none;
+    border-radius: 18px 18px 0 0;
+    padding: 18px 18px 26px;
+    max-height: 88vh;
+    overflow-y: auto;
+    animation: modalUp 0.22s ease-out;
+  }
+  @keyframes modalUp{
+    from{ transform: translateY(24px); opacity: 0; }
+    to{ transform: translateY(0); opacity: 1; }
+  }
+  .modal-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .modal-title{
+    font-weight: 700;
+    font-size: 17px;
+  }
+  .modal-close{
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .modal-close:hover{ color: var(--text); }
+
+  .tap-zone-wrap{
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 16px;
+  }
+  .tap-zone{
+    width: 150px; height: 150px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffb257, var(--amber) 60%, #b85e00 100%);
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 26px rgba(255,138,30,0.35);
+    transition: transform 0.08s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    position: relative;
+    overflow: visible;
+  }
+  .tap-zone:active{ transform: scale(0.94); }
+  .tap-zone-icon{
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 34px;
+    color: #1a1103;
+    line-height: 1;
+  }
+  .tap-zone-value{
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 12px;
+    color: rgba(26,17,3,0.7);
+    margin-top: 4px;
+  }
+
+  .tap-stats{
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .tap-stat{
+    flex: 1;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .tap-stat-label{
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .tap-stat-value{
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    margin-top: 3px;
+  }
+
+  .upgrade-list{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .upgrade-card{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    gap: 12px;
+  }
+  .upgrade-name{
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .upgrade-desc{
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .upgrade-level{
+    font-size: 10px;
+    color: var(--amber);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 4px;
+  }
+  .upgrade-buy{
+    flex: none;
+    background: var(--amber);
+    color: #1a1103;
+    border: none;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 10px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .upgrade-buy:disabled{
+    background: var(--line);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+
+  .tap-pop{
+    position: absolute;
+    left: 50%;
+    top: 10%;
+    transform: translate(-50%, 0);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 16px;
+    color: #fff;
+    pointer-events: none;
+    animation: popUp 0.7s ease-out forwards;
+    z-index: 5;
+  }
+
+  /* ---------- Shop ---------- */
+  .shop-subtitle{
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .shop-networth{
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .shop-networth-value{
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--amber);
+  }
+  .shop-category{
+    margin-bottom: 14px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .shop-category-title{
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+  .branch-track{
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .branch-node{
+    flex: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    background: var(--panel);
+    border: 2px solid var(--line);
+  }
+  .branch-node.done{
+    border-color: var(--green);
+    background: rgba(52,211,153,0.12);
+  }
+  .branch-node.next{
+    border-color: var(--amber);
+    background: rgba(255,138,30,0.12);
+    box-shadow: 0 0 0 3px rgba(255,138,30,0.15);
+  }
+  .branch-node.locked{
+    opacity: 0.45;
+    font-size: 14px;
+  }
+  .branch-connector{
+    flex: 1;
+    min-width: 12px;
+    height: 2px;
+    background: var(--line);
+  }
+  .branch-owned-label{
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .branch-owned-label b{ color: var(--text); }
+  .branch-buy-btn{
+    width: 100%;
+    background: var(--amber);
+    color: #1a1103;
+    border: none;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 11px 8px;
+    cursor: pointer;
+  }
+  .branch-buy-btn:disabled{
+    background: var(--line);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+  .branch-maxed{
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--green);
+    padding: 8px 0;
+  }
+
+  /* ---------- Wheel of fortune ---------- */
+  .wheel-branch-select{
+    display: flex;
+    gap: 6px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .wheel-branch-chip{
+    flex: 1;
+    min-width: 80px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 9px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+  }
+  .wheel-branch-chip.active{
+    background: var(--amber);
+    color: #1a1103;
+    border-color: var(--amber);
+  }
+  .wheel-branch-chip:disabled{
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .wheel-wrap{
+    position: relative;
+    display: flex;
+    justify-content: center;
+    padding: 6px 0 16px;
+  }
+  .wheel-pointer{
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--amber);
+    font-size: 20px;
+    z-index: 3;
+    filter: drop-shadow(0 0 4px rgba(255,138,30,0.6));
+  }
+  .wheel-disc{
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    border: 4px solid var(--panel-2);
+    box-shadow: 0 6px 22px rgba(0,0,0,0.4);
+    transition: transform 4.5s cubic-bezier(0.12, 0.72, 0.1, 1);
+  }
+  .wheel-result{
+    text-align: center;
+    min-height: 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .wheel-result.win{ color: var(--green); }
+  .wheel-result.lose{ color: var(--muted); }
 </style>
 </head>
 <body>
@@ -375,10 +860,24 @@
         <div class="brand-sub">FUN&nbsp;MODE · демо</div>
       </div>
     </div>
-    <div class="balance">
-      <div class="balance-label">Баланс</div>
-      <div class="balance-value" id="balance">1 000.00 ₽</div>
+    <div class="topbar-right">
+      <div class="balance">
+        <div class="balance-label">Баланс</div>
+        <div class="balance-value" id="balance">1 000.00 ₽</div>
+      </div>
     </div>
+  </div>
+
+  <div class="quick-actions">
+    <button class="quick-action-btn" id="shopOpenBtn">
+      <span class="qa-icon">🛍</span><span class="qa-label">Магазин</span>
+    </button>
+    <button class="quick-action-btn" id="clickerOpenBtn">
+      <span class="qa-icon">₽</span><span class="qa-label">Тапалка</span>
+    </button>
+    <button class="quick-action-btn" id="wheelOpenBtn">
+      <span class="qa-icon">🎡</span><span class="qa-label">Колесо</span>
+    </button>
   </div>
 
   <div class="history" id="history"></div>
@@ -434,6 +933,117 @@
 
   <div class="note">Игра на <b>виртуальные</b> очки, без реальных денег и без привязки платежей. Баланс сбрасывается при перезагрузке страницы.</div>
 
+</div>
+
+<div class="modal-overlay" id="clickerModal">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <div class="modal-title">Тапалка</div>
+      <button class="modal-close" id="clickerCloseBtn">✕</button>
+    </div>
+
+    <div class="tap-zone-wrap">
+      <button class="tap-zone" id="tapZone">
+        <div class="tap-zone-icon">₽</div>
+        <div class="tap-zone-value" id="tapValueLabel">+50.00 ₽</div>
+      </button>
+    </div>
+
+    <div class="tap-stats">
+      <div class="tap-stat">
+        <div class="tap-stat-label">За тап</div>
+        <div class="tap-stat-value" id="statPerTap">50.00 ₽</div>
+      </div>
+      <div class="tap-stat">
+        <div class="tap-stat-label">В секунду</div>
+        <div class="tap-stat-value" id="statPerSec">0.00 ₽</div>
+      </div>
+    </div>
+
+    <div class="upgrade-list">
+
+      <div class="upgrade-card">
+        <div class="upgrade-info">
+          <div class="upgrade-name">Крепкая рука</div>
+          <div class="upgrade-desc">+15 ₽ к доходу за один тап</div>
+          <div class="upgrade-level" id="clickUpgLevel">Уровень 0</div>
+        </div>
+        <button class="upgrade-buy" id="buyClickUpg">
+          <span id="clickUpgCost">100 ₽</span>
+        </button>
+      </div>
+
+      <div class="upgrade-card">
+        <div class="upgrade-info">
+          <div class="upgrade-name">Авто-сборщик</div>
+          <div class="upgrade-desc">+5 ₽ в секунду пассивно</div>
+          <div class="upgrade-level" id="autoUpgLevel">Уровень 0</div>
+        </div>
+        <button class="upgrade-buy" id="buyAutoUpg">
+          <span id="autoUpgCost">250 ₽</span>
+        </button>
+      </div>
+
+      <div class="upgrade-card">
+        <div class="upgrade-info">
+          <div class="upgrade-name">Счастливый тап</div>
+          <div class="upgrade-desc">+4% шанс крита (x3 доход с тапа)</div>
+          <div class="upgrade-level" id="critUpgLevel">Уровень 0 · шанс 0%</div>
+        </div>
+        <button class="upgrade-buy" id="buyCritUpg">
+          <span id="critUpgCost">180 ₽</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="shopModal">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Магазин</div>
+        <div class="shop-subtitle">Коллекция вещей — статус, без влияния на игру</div>
+      </div>
+      <button class="modal-close" id="shopCloseBtn">✕</button>
+    </div>
+
+    <div class="shop-networth">
+      <div class="tap-stat-label">Стоимость коллекции</div>
+      <div class="shop-networth-value" id="shopNetworth">0 ₽ куплено</div>
+    </div>
+
+    <div class="shop-categories" id="shopCategories"></div>
+
+  </div>
+</div>
+
+<div class="modal-overlay" id="wheelModal">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Колесо удачи</div>
+        <div class="shop-subtitle">Выпавший шанс — вероятность получить следующую вещь бесплатно</div>
+      </div>
+      <button class="modal-close" id="wheelCloseBtn">✕</button>
+    </div>
+
+    <div class="wheel-branch-select" id="wheelBranchSelect"></div>
+
+    <div class="wheel-wrap">
+      <div class="wheel-pointer">▼</div>
+      <div class="wheel-disc" id="wheelDisc">
+        <svg viewBox="0 0 200 200" width="100%" height="100%">
+          <g id="wheelSectors"></g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="wheel-result" id="wheelResult"></div>
+
+    <button class="branch-buy-btn" id="wheelSpinBtn">Крутить — <span id="wheelSpinCost">500 ₽</span></button>
+  </div>
 </div>
 
 <script>
@@ -493,12 +1103,22 @@
   }
   function updateBalanceUI(){
     el.balance.textContent = fmtMoney(balance);
+    saveBalance();
   }
 
   // simple house-edge crash-point generator (demo only, not cryptographically fair)
+  // cryptographically strong random in [0,1) — less predictable than Math.random,
+  // and immune to any pattern-spotting over long play sessions
+  function secureRandom(){
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return buf[0] / 4294967296; // 2^32
+  }
+
   function generateCrashPoint(){
     const houseEdge = 0.04;
-    const r = Math.random();
+    // mix two independent draws so short-term streaks don't fall into a visible pattern
+    const r = (secureRandom() * 0.5) + (secureRandom() * 0.5);
     if (r < houseEdge) return 1.00;
     const raw = (1 - houseEdge) / (1 - r);
     return Math.min(Math.max(raw, 1.00), 500);
@@ -631,6 +1251,12 @@
     el.statusLine.textContent = 'полёт';
     el.multiplier.className = 'multiplier flying';
 
+    const displayEl = document.querySelector('.display');
+    displayEl.classList.remove('crash-shake');
+    void displayEl.offsetWidth; // restart animation reliably
+    displayEl.classList.add('launch-flash');
+    setTimeout(() => displayEl.classList.remove('launch-flash'), 500);
+
     if (pendingBet){
       activeBet = { amount: pendingBet, cashedOutAt: null };
       pendingBet = null;
@@ -674,6 +1300,14 @@
     el.statusLine.textContent = 'краш';
     el.statusLine.className = 'status-line crashed';
     drawScene();
+
+    const displayEl = document.querySelector('.display');
+    displayEl.classList.add('crash-shake');
+    setTimeout(() => displayEl.classList.remove('crash-shake'), 400);
+    const shock = document.createElement('div');
+    shock.className = 'shockwave';
+    displayEl.appendChild(shock);
+    setTimeout(() => shock.remove(), 600);
 
     const won = !!(activeBet && activeBet.cashedOutAt);
     pushHistory(crashPoint, won);
@@ -798,10 +1432,449 @@
     document.getElementById('tabManual').classList.remove('active');
   });
 
+  // ---------------- persistence (artifact storage) ----------------
+  const STORAGE_KEY = 'climb:balance';
+  let storageReady = false;
+
+  async function loadBalance(){
+    try{
+      const res = await window.storage.get(STORAGE_KEY, false);
+      if (res && typeof res.value !== 'undefined'){
+        const parsed = parseFloat(res.value);
+        if (!isNaN(parsed)) balance = parsed;
+      }
+    } catch (e){
+      // no saved balance yet — keep default
+    }
+    storageReady = true;
+    updateBalanceUI();
+  }
+
+  let saveTimer = null;
+  function saveBalance(){
+    if (!storageReady) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async () => {
+      try{
+        await window.storage.set(STORAGE_KEY, String(balance), false);
+      } catch (e){
+        console.error('Не удалось сохранить баланс', e);
+      }
+    }, 400); // small debounce so rapid clicks don't spam requests
+  }
+
+  // ---------------- currency clicker (tap game with upgrades) ----------------
+  const clickerModal = document.getElementById('clickerModal');
+  const tapZone = document.getElementById('tapZone');
+
+  let clickUpgLevel = 0;
+  let autoUpgLevel = 0;
+  let critUpgLevel = 0;
+  const CLICK_UPG_BASE_COST = 100;
+  const CLICK_UPG_GROWTH = 1.7;
+  const CLICK_UPG_GAIN = 15;
+  const AUTO_UPG_BASE_COST = 250;
+  const AUTO_UPG_GROWTH = 1.8;
+  const AUTO_UPG_GAIN = 5;
+  const CRIT_UPG_BASE_COST = 180;
+  const CRIT_UPG_GROWTH = 1.75;
+  const CRIT_CHANCE_PER_LEVEL = 0.04; // +4% per level
+  const CRIT_MAX_LEVEL = 20; // caps at 80% chance
+  const CRIT_MULTIPLIER = 3;
+  const BASE_TAP_VALUE = 50;
+
+  function tapValue(){ return BASE_TAP_VALUE + clickUpgLevel * CLICK_UPG_GAIN; }
+  function autoIncome(){ return autoUpgLevel * AUTO_UPG_GAIN; }
+  function critChance(){ return Math.min(critUpgLevel, CRIT_MAX_LEVEL) * CRIT_CHANCE_PER_LEVEL; }
+  function clickUpgCost(){ return Math.round(CLICK_UPG_BASE_COST * Math.pow(CLICK_UPG_GROWTH, clickUpgLevel)); }
+  function autoUpgCost(){ return Math.round(AUTO_UPG_BASE_COST * Math.pow(AUTO_UPG_GROWTH, autoUpgLevel)); }
+  function critUpgCost(){ return Math.round(CRIT_UPG_BASE_COST * Math.pow(CRIT_UPG_GROWTH, critUpgLevel)); }
+
+  function renderClickerUI(){
+    document.getElementById('tapValueLabel').textContent = '+' + tapValue().toFixed(2) + ' ₽';
+    document.getElementById('statPerTap').textContent = tapValue().toFixed(2) + ' ₽';
+    document.getElementById('statPerSec').textContent = autoIncome().toFixed(2) + ' ₽';
+
+    document.getElementById('clickUpgLevel').textContent = 'Уровень ' + clickUpgLevel;
+    document.getElementById('autoUpgLevel').textContent = 'Уровень ' + autoUpgLevel;
+    document.getElementById('critUpgLevel').textContent = 'Уровень ' + critUpgLevel + ' · шанс ' + Math.round(critChance()*100) + '%';
+    document.getElementById('clickUpgCost').textContent = clickUpgCost().toFixed(0) + ' ₽';
+    document.getElementById('autoUpgCost').textContent = autoUpgCost().toFixed(0) + ' ₽';
+    document.getElementById('critUpgCost').textContent = critUpgLevel >= CRIT_MAX_LEVEL ? 'МАКС' : critUpgCost().toFixed(0) + ' ₽';
+
+    document.getElementById('buyClickUpg').disabled = balance < clickUpgCost();
+    document.getElementById('buyAutoUpg').disabled = balance < autoUpgCost();
+    document.getElementById('buyCritUpg').disabled = critUpgLevel >= CRIT_MAX_LEVEL || balance < critUpgCost();
+  }
+
+  document.getElementById('clickerOpenBtn').addEventListener('click', () => {
+    clickerModal.classList.add('open');
+    renderClickerUI();
+  });
+  document.getElementById('clickerCloseBtn').addEventListener('click', () => {
+    clickerModal.classList.remove('open');
+  });
+  clickerModal.addEventListener('click', (e) => {
+    if (e.target === clickerModal) clickerModal.classList.remove('open');
+  });
+
+  tapZone.addEventListener('click', () => {
+    const isCrit = Math.random() < critChance();
+    const gain = isCrit ? tapValue() * CRIT_MULTIPLIER : tapValue();
+    balance += gain;
+    updateBalanceUI();
+    renderClickerUI();
+
+    const pop = document.createElement('div');
+    pop.className = 'tap-pop';
+    pop.textContent = (isCrit ? 'КРИТ! +' : '+') + gain.toFixed(0);
+    if (isCrit){ pop.style.color = 'var(--green)'; pop.style.fontSize = '20px'; }
+    pop.style.left = (40 + Math.random()*20) + '%';
+    tapZone.appendChild(pop);
+    setTimeout(() => pop.remove(), 700);
+  });
+
+  document.getElementById('buyClickUpg').addEventListener('click', () => {
+    const cost = clickUpgCost();
+    if (balance < cost) return;
+    balance -= cost;
+    clickUpgLevel++;
+    updateBalanceUI();
+    renderClickerUI();
+    saveClickerState();
+  });
+  document.getElementById('buyAutoUpg').addEventListener('click', () => {
+    const cost = autoUpgCost();
+    if (balance < cost) return;
+    balance -= cost;
+    autoUpgLevel++;
+    updateBalanceUI();
+    renderClickerUI();
+    saveClickerState();
+  });
+  document.getElementById('buyCritUpg').addEventListener('click', () => {
+    if (critUpgLevel >= CRIT_MAX_LEVEL) return;
+    const cost = critUpgCost();
+    if (balance < cost) return;
+    balance -= cost;
+    critUpgLevel++;
+    updateBalanceUI();
+    renderClickerUI();
+    saveClickerState();
+  });
+
+  // passive income tick, once per second
+  setInterval(() => {
+    const income = autoIncome();
+    if (income > 0){
+      balance += income;
+      updateBalanceUI();
+      if (clickerModal.classList.contains('open')) renderClickerUI();
+    }
+  }, 1000);
+
+  const CLICKER_STORAGE_KEY = 'climb:clickerUpgrades';
+  let clickerSaveTimer = null;
+  function saveClickerState(){
+    if (!storageReady) return;
+    clearTimeout(clickerSaveTimer);
+    clickerSaveTimer = setTimeout(async () => {
+      try{
+        await window.storage.set(CLICKER_STORAGE_KEY, JSON.stringify({clickUpgLevel, autoUpgLevel, critUpgLevel}), false);
+      } catch (e){
+        console.error('Не удалось сохранить апгрейды тапалки', e);
+      }
+    }, 400);
+  }
+  async function loadClickerState(){
+    try{
+      const res = await window.storage.get(CLICKER_STORAGE_KEY, false);
+      if (res && res.value){
+        const parsed = JSON.parse(res.value);
+        if (typeof parsed.clickUpgLevel === 'number') clickUpgLevel = parsed.clickUpgLevel;
+        if (typeof parsed.autoUpgLevel === 'number') autoUpgLevel = parsed.autoUpgLevel;
+        if (typeof parsed.critUpgLevel === 'number') critUpgLevel = parsed.critUpgLevel;
+      }
+    } catch (e){
+      // nothing saved yet
+    }
+  }
+
+  // ---------------- shop: branching progression ladders ----------------
+  const shopModal = document.getElementById('shopModal');
+  const SHOP_BRANCHES = [
+    {
+      id: 'electronics',
+      title: 'Электроника',
+      items: [
+        {name: 'Наушники', icon: '🎧', price: 300},
+        {name: 'Смартфон', icon: '📱', price: 1200},
+        {name: 'Ноутбук', icon: '💻', price: 3500},
+        {name: 'Игровая приставка', icon: '🎮', price: 8000},
+        {name: 'Домашний кинотеатр', icon: '📺', price: 20000},
+      ]
+    },
+    {
+      id: 'transport',
+      title: 'Транспорт',
+      items: [
+        {name: 'Велосипед', icon: '🚲', price: 800},
+        {name: 'Скутер', icon: '🛵', price: 4000},
+        {name: 'Мотоцикл', icon: '🏍️', price: 18000},
+        {name: 'Автомобиль', icon: '🚗', price: 60000},
+        {name: 'Спорткар', icon: '🏎️', price: 500000},
+      ]
+    },
+    {
+      id: 'realestate',
+      title: 'Недвижимость',
+      items: [
+        {name: 'Студия', icon: '🏬', price: 5000},
+        {name: 'Квартира', icon: '🏢', price: 150000},
+        {name: 'Дом', icon: '🏠', price: 500000},
+        {name: 'Вилла', icon: '🏰', price: 2000000},
+        {name: 'Пентхаус', icon: '🌆', price: 8000000},
+      ]
+    },
+    {
+      id: 'luxury',
+      title: 'Роскошь',
+      items: [
+        {name: 'Часы', icon: '⌚', price: 2000},
+        {name: 'Швейцарские часы', icon: '💎', price: 10000},
+        {name: 'Яхта', icon: '🛥️', price: 800000},
+        {name: 'Частный самолёт', icon: '✈️', price: 3000000},
+        {name: 'Остров', icon: '🏝️', price: 20000000},
+      ]
+    },
+  ];
+  let branchProgress = {}; // branchId -> number of items purchased (level)
+
+  function renderShop(){
+    const wrap = document.getElementById('shopCategories');
+    wrap.innerHTML = SHOP_BRANCHES.map(branch => {
+      const level = branchProgress[branch.id] || 0;
+      const isMaxed = level >= branch.items.length;
+      const currentOwned = branch.items[level - 1]; // last purchased, may be undefined
+      const next = branch.items[level]; // next to buy, may be undefined if maxed
+
+      return `
+        <div class="shop-category">
+          <div class="shop-category-title">${branch.title} — уровень ${level}/${branch.items.length}</div>
+          <div class="branch-track">
+            ${branch.items.map((item, i) => {
+              const state = i < level ? 'done' : (i === level ? 'next' : 'locked');
+              return `<div class="branch-node ${state}" title="${item.name}">${state === 'locked' ? '🔒' : item.icon}</div>`;
+            }).join('<div class="branch-connector"></div>')}
+          </div>
+          <div class="branch-current">
+            ${currentOwned
+              ? `<div class="branch-owned-label">Сейчас: <b>${currentOwned.icon} ${currentOwned.name}</b></div>`
+              : `<div class="branch-owned-label">Пока ничего не куплено в этой ветке</div>`
+            }
+          </div>
+          ${isMaxed
+            ? `<div class="branch-maxed">🏆 Ветка пройдена полностью</div>`
+            : `<button class="branch-buy-btn" data-branch="${branch.id}" data-price="${next.price}" ${balance < next.price ? 'disabled' : ''}>
+                 Купить ${next.icon} ${next.name} — ${next.price.toLocaleString('ru-RU')} ₽
+               </button>`
+          }
+        </div>
+      `;
+    }).join('');
+
+    const totalLevels = SHOP_BRANCHES.reduce((sum, b) => sum + (branchProgress[b.id] || 0), 0);
+    const totalPossible = SHOP_BRANCHES.reduce((sum, b) => sum + b.items.length, 0);
+    document.getElementById('shopNetworth').textContent =
+      totalLevels + ' / ' + totalPossible + ' вещей куплено';
+
+    wrap.querySelectorAll('.branch-buy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const branchId = btn.dataset.branch;
+        const price = parseFloat(btn.dataset.price);
+        if (balance < price) return;
+        balance -= price;
+        branchProgress[branchId] = (branchProgress[branchId] || 0) + 1;
+        updateBalanceUI();
+        renderShop();
+        saveShopState();
+      });
+    });
+  }
+
+  document.getElementById('shopOpenBtn').addEventListener('click', () => {
+    shopModal.classList.add('open');
+    renderShop();
+  });
+  document.getElementById('shopCloseBtn').addEventListener('click', () => {
+    shopModal.classList.remove('open');
+  });
+  shopModal.addEventListener('click', (e) => {
+    if (e.target === shopModal) shopModal.classList.remove('open');
+  });
+
+  const SHOP_STORAGE_KEY = 'climb:shopProgress';
+  let shopSaveTimer = null;
+  function saveShopState(){
+    if (!storageReady) return;
+    clearTimeout(shopSaveTimer);
+    shopSaveTimer = setTimeout(async () => {
+      try{
+        await window.storage.set(SHOP_STORAGE_KEY, JSON.stringify(branchProgress), false);
+      } catch (e){
+        console.error('Не удалось сохранить прогресс магазина', e);
+      }
+    }, 400);
+  }
+  async function loadShopState(){
+    try{
+      const res = await window.storage.get(SHOP_STORAGE_KEY, false);
+      if (res && res.value){
+        branchProgress = JSON.parse(res.value) || {};
+      }
+    } catch (e){
+      // nothing saved yet
+    }
+  }
+
+  // ---------------- wheel of fortune ----------------
+  const wheelModal = document.getElementById('wheelModal');
+  const wheelDisc = document.getElementById('wheelDisc');
+  const WHEEL_SECTORS = [
+    {value: 20, color: '#ff4d5e'},
+    {value: 25, color: '#6f7c8c'},
+    {value: 30, color: '#6b4a22'},
+    {value: 50, color: '#ff8a1e'},
+    {value: 75, color: '#34d399'},
+  ];
+  const WHEEL_SPIN_COST = 500;
+  let wheelSelectedBranch = null;
+  let wheelSpinning = false;
+  let wheelRotation = 0; // accumulated rotation, so each spin continues from here
+
+  function buildWheelSVG(){
+    const g = document.getElementById('wheelSectors');
+    const n = WHEEL_SECTORS.length;
+    const anglePer = 360 / n;
+    const cx = 100, cy = 100, r = 96;
+    let html = '';
+    WHEEL_SECTORS.forEach((sec, i) => {
+      const startAngle = i * anglePer - 90;
+      const endAngle = startAngle + anglePer;
+      const x1 = cx + r * Math.cos(startAngle * Math.PI/180);
+      const y1 = cy + r * Math.sin(startAngle * Math.PI/180);
+      const x2 = cx + r * Math.cos(endAngle * Math.PI/180);
+      const y2 = cy + r * Math.sin(endAngle * Math.PI/180);
+      html += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 0,1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${sec.color}" stroke="#090c10" stroke-width="2"/>`;
+      const midAngle = startAngle + anglePer/2;
+      const tx = cx + (r*0.62) * Math.cos(midAngle * Math.PI/180);
+      const ty = cy + (r*0.62) * Math.sin(midAngle * Math.PI/180);
+      html += `<text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}" fill="#0b0e12" font-size="17" font-weight="700" font-family="JetBrains Mono, monospace" text-anchor="middle" dominant-baseline="middle">${sec.value}%</text>`;
+    });
+    g.innerHTML = html;
+  }
+
+  function renderWheelBranchSelect(){
+    const wrap = document.getElementById('wheelBranchSelect');
+    wrap.innerHTML = SHOP_BRANCHES.map(branch => {
+      const level = branchProgress[branch.id] || 0;
+      const maxed = level >= branch.items.length;
+      if (wheelSelectedBranch === null && !maxed) wheelSelectedBranch = branch.id;
+      return `<button class="wheel-branch-chip ${wheelSelectedBranch === branch.id ? 'active' : ''}" data-branch="${branch.id}" ${maxed ? 'disabled' : ''}>${branch.title}${maxed ? ' ✓' : ''}</button>`;
+    }).join('');
+
+    wrap.querySelectorAll('.wheel-branch-chip:not(:disabled)').forEach(chip => {
+      chip.addEventListener('click', () => {
+        wheelSelectedBranch = chip.dataset.branch;
+        renderWheelBranchSelect();
+      });
+    });
+  }
+
+  function currentWheelBranch(){
+    return SHOP_BRANCHES.find(b => b.id === wheelSelectedBranch);
+  }
+
+  function updateWheelSpinBtn(){
+    const branch = currentWheelBranch();
+    const btn = document.getElementById('wheelSpinBtn');
+    const noBranchLeft = !branch;
+    btn.disabled = wheelSpinning || noBranchLeft || balance < WHEEL_SPIN_COST;
+    document.getElementById('wheelSpinCost').textContent = WHEEL_SPIN_COST.toLocaleString('ru-RU') + ' ₽';
+  }
+
+  document.getElementById('wheelOpenBtn').addEventListener('click', () => {
+    wheelModal.classList.add('open');
+    document.getElementById('wheelResult').textContent = '';
+    document.getElementById('wheelResult').className = 'wheel-result';
+    renderWheelBranchSelect();
+    updateWheelSpinBtn();
+  });
+  document.getElementById('wheelCloseBtn').addEventListener('click', () => {
+    if (!wheelSpinning) wheelModal.classList.remove('open');
+  });
+  wheelModal.addEventListener('click', (e) => {
+    if (e.target === wheelModal && !wheelSpinning) wheelModal.classList.remove('open');
+  });
+
+  document.getElementById('wheelSpinBtn').addEventListener('click', () => {
+    if (wheelSpinning) return;
+    const branch = currentWheelBranch();
+    if (!branch || balance < WHEEL_SPIN_COST) return;
+
+    balance -= WHEEL_SPIN_COST;
+    updateBalanceUI();
+    wheelSpinning = true;
+    updateWheelSpinBtn();
+    document.getElementById('wheelResult').textContent = 'Крутим…';
+    document.getElementById('wheelResult').className = 'wheel-result';
+
+    // pick which sector we land on (uniform among the 5 sectors)
+    const n = WHEEL_SECTORS.length;
+    const landIndex = Math.floor(secureRandom() * n);
+    const sector = WHEEL_SECTORS[landIndex];
+    const anglePer = 360 / n;
+    const sectorCenter = landIndex * anglePer + anglePer/2;
+    // rotate so that sector lands under the top pointer; add several full spins for effect
+    const extraSpins = 5 + Math.floor(secureRandom()*3);
+    const targetRotation = wheelRotation + extraSpins*360 + (360 - sectorCenter);
+    wheelRotation = targetRotation;
+    wheelDisc.style.transform = `rotate(${targetRotation}deg)`;
+
+    setTimeout(() => {
+      const won = secureRandom() < (sector.value / 100);
+      const resultEl = document.getElementById('wheelResult');
+      if (won){
+        branchProgress[branch.id] = (branchProgress[branch.id] || 0) + 1;
+        saveShopState();
+        resultEl.textContent = `Выпало ${sector.value}% — повезло! Вещь в ветке «${branch.title}» получена бесплатно 🎉`;
+        resultEl.className = 'wheel-result win';
+      } else {
+        resultEl.textContent = `Выпало ${sector.value}% — в этот раз не повезло. Попробуйте ещё раз.`;
+        resultEl.className = 'wheel-result lose';
+      }
+      wheelSpinning = false;
+      renderWheelBranchSelect();
+      updateWheelSpinBtn();
+    }, 4600);
+  });
+
+  buildWheelSVG();
+
+  // ---------------- PWA: service worker registration ----------------
+  if ('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch((e) => {
+        console.log('Service worker недоступен (нормально при просмотре внутри артефакта):', e);
+      });
+    });
+  }
+
   // ---------------- init ----------------
-  updateBalanceUI();
-  // seed a little history so the strip isn't empty
-  [1.23, 4.81, 1.02, 2.55, 1.94].forEach(v => pushHistory(v, false));
+  updateBalanceUI(); // show default while we fetch the saved value
+  loadBalance();
+  loadClickerState();
+  loadShopState();
   startCountdown(5);
 
 })();
